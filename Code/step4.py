@@ -182,7 +182,7 @@ def main():
     plt.plot(moving_average(clairvoyant_expected_rewards, 10), label='Clairvoyant Expected rewards',
              color='tab:red')
     plt.plot(np.ones(len(clairvoyant_expected_rewards))*np.mean(clairvoyant_expected_rewards), color='tomato', linestyle=(0,(6,10)))
-    plt.legend(loc='lower right')
+    plt.legend(loc='center right')
     plt.title('Expected rewards of each algorithm (Average 10 Days)')
     plt.xlabel('Days')
     plt.ylabel('Expected Reward')
