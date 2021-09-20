@@ -10,7 +10,7 @@ from convertion_rate import Conv_rate2
 np.random.seed(5)
 random.seed(5)
 
-# time horizon
+# Number of Days
 T = 365
 
 # number of customers of each class
