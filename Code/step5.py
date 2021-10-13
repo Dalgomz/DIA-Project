@@ -1,9 +1,9 @@
-# Fixed Asignement of promos
 # Fixed Price of Item 2 (all prices are the same)
-# Unknown customers per class
+# Unknown customers per class (Bernoulli Distrbution)
 # Unknown conversion rate of item 2 
 
 #*// Use function to get these*
+# Optimize the Asignement of promos
 # UCB and Thompson sapmpling to compare porformance
 # Maximize the revenue by optimizing price of item 1
 
