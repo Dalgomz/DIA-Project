@@ -1,142 +1,138 @@
+# Fixed Asignement of promos
+# Fixed Price of Item 1
+# Fixed Price of Item 2 (all prices are the same)
+# Knows customers per class
+# Known conversion rate of item 2
+# UCB and Thompson sapmpling to compare porformance
+# Maximize the revenue by optimizing price of item 1
+
 import numpy as np
-import matplotlib.pyplot as plt
-from numpy.lib.financial import rate
-from enviroment.Environment import Enviroment
-from learners.thompson import Thompson
-from learners.ucb import UCB
-from convertion_rate import Conv_rate1
-from convertion_rate import Conv_rate2
+import matplotlib.pyplot as plt 
+import vars as v
+from Environment import Environment
+from learners.ThompsonLearner import *
+from learners.UCB1Learner import *
+
+np.random.seed(3)
+
+# Definition of variables
+
+totalCustomers = v.maxCustomers
+customers = v.customers
+convRates1 = v.cvRate1
+convRates2 = v.cvRate2
+item1Prices = v.price1
+item1Cost = v.basePrice1
+item2Prices = [v.price2[0],v.price2[0],v.price2[0],v.price2[0]]
+item2Cost = v.basePrice2
+promoDistribution = v.promDist
+nArms = len(customers)
+maxRevenue = max(item1Prices)+max(item2Prices)-(item1Cost+item2Cost)
+
+# Time in days
+T = 365
+
+nExperiments = 1
+tsRewardsPerExperiment = []
+ucbRewardsPerExperiment = []
 
 
 
-np.random.seed(0)
+# Clarivoyant 
+dailyOptimalRewards = [0,0,0,0]
+for i in range(len(item1Prices)):
+	for j in range(len(customers)):
+		# Customer j with Price i for its conversion rate
+		dailyOptimalRewards[i] += ((item1Prices[i]-item1Cost)*customers[j]*convRates1[j][i] + (item2Prices[0]-item2Cost)*customers[j]*convRates2[j][0])
+
+optimalPrice = dailyOptimalRewards.index(max(dailyOptimalRewards))
+optimalRewards = [(dailyOptimalRewards[optimalPrice]/(maxRevenue * totalCustomers)) for x in range(365)]
+optimalPrice = dailyOptimalRewards[optimalPrice]
+
+for e in range(0,nExperiments):
+	#print('\r', "Progress: {}/{} days".format(e, nExperiments), end=" ")
+	env = Environment(nArms, customers, convRates1, convRates2)
+	tsLearner = ThompsonLearner(nArms)
+	ucbLearner = UCBLearner(nArms)
+	for t in range(0,T):
+		# Thompson Learner
+		tsPulledArm = tsLearner.pullArm()
+		tsReward = 0
+		tsSale = 0
+		
+		# UCB1 Learner
+		ucbPulledArm = ucbLearner.pullArm()
+		ucbReward = 0
+		ucbSale = 0
 
 
-# Task 3
-def main():
-   
-    T = 365
-    # arms apply to price 1
-    N_PRICES = 4
-    price_1 = np.array([40,45,50,55])
+		# Sale to all daily clients
+		for i in range(len(customers)):
+			it1, it2 = env.round(i, tsPulledArm)
+			tsReward += (item1Prices[tsPulledArm] - item1Cost) * it1
+			tsReward += (item2Prices[0] - item2Cost) * it2
 
-    # number of arms equal to number of price candidates for product 1
-    n_arms = N_PRICES
+			it1, it2 = env.round(i, ucbPulledArm)
+			ucbReward += (item1Prices[ucbPulledArm] - item1Cost) * it1
+			ucbReward += (item2Prices[0] - item2Cost) * it2
 
-    # since promos only apply to price 2, we consider that we only have one promo (0% discount)
-    n_promos = 1
+		rewardTS = tsReward / (maxRevenue * totalCustomers)
+		rewardUCB = ucbReward / (maxRevenue * totalCustomers)
 
-    # maximum revenue margin can't be larger than 1. Divide scenario margins by 700
-    margin1 = np.array([ 10., 14., 18., 22.]) / 30.
-    # price 2 is fixed so we have the maximum margin possible for each sale
-    margin2 = np.array([5.]) / 70.
+		tsLearner.update(tsPulledArm, rewardTS)
+		ucbLearner.update(ucbPulledArm, rewardUCB)
 
-    # Number of customers of class i
-    n_customers = np.array([400, 300, 200, 100])
- 
+	tsRewardsPerExperiment.append(tsLearner.collectedRewards)
+	ucbRewardsPerExperiment.append(ucbLearner.collectedRewards)
 
-    # Conversion rate of the first item, from class i at price j.
-    conv_rate1 = Conv_rate1(price_1)
+tsData = np.cumsum(np.mean(tsRewardsPerExperiment,axis=0))
+ucbData = np.cumsum(np.mean(ucbRewardsPerExperiment,axis=0))
+optData = np.cumsum(optimalRewards)
+print("Best Price learnt by Thompson Sampling:",item1Prices[np.argmax([len(a) for a in tsLearner.rewardsPerArm])],"$")
+print("Best price learnt bu UCB1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
 
-  
-    # Conversion rate of the second item, from class i at original price j, discount from promo k
-    # conversion rates are the same for every arm
-    conv_rate2 = np.array([[[.25]] * 4, [[.05]] * 4, [[.15]] * 4, [[.45]] * 4])
+plt.figure(0)
+plt.plot(tsData, label='Thomson Sampling', color='tab:blue')
+plt.plot(ucbData, label='UCB1', color='tab:green')
+plt.plot(optData, label='Carivoyant', color='tab:red')
+plt.legend(loc='lower right')
+plt.grid(linestyle='--')
+plt.xlabel('Days')
+plt.ylabel('Rewards')
+plt.title('Cumulative Reward collected by both learners')
+plt.show()
 
-  
-    # in this case 100% of every class has the only promo available
-    promo_assig = np.array([[1.], [1.], [1.], [1.]])
+# Daily reward
 
-  
-    st_env1 = Enviroment(n_arms, n_customers, margin1, margin2, conv_rate1, conv_rate2, promo_assig)
-    st_env2 = Enviroment(n_arms, n_customers, margin1, margin2, conv_rate1, conv_rate2, promo_assig)
+tsData = np.mean(np.multiply(tsRewardsPerExperiment,(maxRevenue * totalCustomers)),axis=0)
+ucbData = np.mean(np.multiply(ucbRewardsPerExperiment,(maxRevenue * totalCustomers)),axis=0)
+optData = np.multiply(optimalRewards,(maxRevenue * totalCustomers))
+def moving_average(x, w):
+	return np.convolve(x, np.ones(w), 'valid') / w
 
-    learner1 = Thompson(n_arms)
-    learner2 = UCB(n_arms)
+plt.figure(0)
+plt.plot(moving_average(tsData, 5), label='Thomson Sampling', color='tab:blue')
+plt.plot(moving_average(ucbData, 5), label='UCB1', color='tab:green')
+plt.plot(optData, label='Carivoyant', color='tab:red')
+plt.legend(loc='lower right')
+plt.grid(linestyle='--')
+plt.xlabel('Days')
+plt.ylabel('Revenue')
+plt.title('Daily Reward learnt by both learners')
+plt.show()
 
-    rewards1 = []
-    rewards2 = []
-    arms1 = []
-    arms2 = []
-    for i in range(T):
-        arm1 = learner1.pull_arm()
-        arm2 = learner2.pull_arm()
-
-        reward1 = st_env1.round(arm1)
-        reward2 = st_env2.round(arm2)
-
-        learner1.update(arm1, reward1)
-        learner2.update(arm2, reward2)
-
-        rewards1.append(reward1)
-        rewards2.append(reward2)
-
-        arms1.append(arm1)
-        arms2.append(arm2)
-
-    print()
-    print('LEARNING RESULTS')
-    print()
-    print("Thompson learner converges to price {}$ for product 1".format(price_1[np.argmax([len(a) for a in learner1.rewards_per_arm])]))
-    print("UCB learner converges to price {}$ for product 1".format(price_1[np.argmax([len(a) for a in learner2.rewards_per_arm])]))
-    print()
-    print(f'Total margin collected by UCB: {np.sum(rewards2)}')
-    print(f'Total margin collected by Thompson Sampling: {np.sum(rewards1)}')
-
-    plt.plot(np.cumsum(rewards1), label='Thomson Sampling', color='tab:blue')
-    plt.plot(np.cumsum(rewards2), label='UCB1', color='tab:green')
-    plt.legend(loc='lower right')
-    plt.grid(linestyle='--')
-    plt.xlabel('Days')
-    plt.ylabel('Reward')
-    plt.title('Cumulative Rewards collected by both learners')
-    plt.show()
-
-    
-    def moving_average(x, w):
-        return np.convolve(x, np.ones(w), 'valid') / w
-
-    # regrets are calculated in terms of the expected value of the reward for each pulled arm
-    def expected_value_of_reward(pulled_arm):
-        reward = 0
-        for cust_class in range(len(n_customers)):
-            reward += margin1[pulled_arm] * conv_rate1[cust_class, pulled_arm]
-            for promo in range(n_promos):
-                reward += margin2[promo] * conv_rate2[cust_class, pulled_arm, promo] * promo_assig[cust_class, promo] * \
-                          conv_rate1[cust_class, pulled_arm]
-        return reward
-
-    # since environment is stationary we can just get the argmax of the expected reward for a single round of each arm
-    # to get the arm chosen by the clairvoyant algorithm
-    clairvoyant_arm = np.argmax([expected_value_of_reward(i) for i in range(4)])
-
-    # expected rewards for each algorithm in each round
-    rewards_expected1 = []
-    rewards_expected2 = []
-    rewards_clairvoyant_expected = []
-    for i in range(T):
-        arm1 = arms1[i]
-        arm2 = arms2[i]
-        rewards_expected1.append(expected_value_of_reward(arm1))
-        rewards_expected2.append(expected_value_of_reward(arm2))
-        rewards_clairvoyant_expected.append(expected_value_of_reward(clairvoyant_arm))
-
-    print()
-    print(f'Total expected regret of UCB: {np.sum(np.subtract(rewards_clairvoyant_expected, rewards_expected2))}')
-    print(f'Total expected regret of Thompson Sampling: '
-          f'{np.sum(np.subtract(rewards_clairvoyant_expected, rewards_expected1))}')
-
-    plt.plot(moving_average(rewards_expected1, 5), label='Thomson Sampling', color='tab:blue')
-    plt.plot(moving_average(rewards_expected2, 5), label='UCB1',  color='tab:green')
-    plt.plot(rewards_clairvoyant_expected, label='Clairvoyant', color='tab:red')
-    plt.legend(loc='lower right')
-    plt.grid(linestyle='--')
-    plt.xlabel('Days')
-    plt.ylabel('Expected Reward')
-    plt.title('Expected rewards for each algorithm (Average 5 Days)')
-    plt.show()
-
-
-
-if __name__ == '__main__':
-    main()
+# Regret
+"""
+tsData = np.cumsum(np.mean(tsRewardsPerExperiment,axis=0))
+ucbData = np.cumsum(np.mean(ucbRewardsPerExperiment,axis=0))
+optData = np.cumsum(optimalRewards)
+"""
+plt.figure(0)
+plt.plot(np.cumsum(np.array(optData) - np.array(tsData)), label='Thomson Sampling', color='tab:blue')
+plt.plot(np.cumsum(np.array(optData) - np.array(ucbData)), label='UCB1', color='tab:green')
+plt.legend(loc='lower right')
+plt.grid(linestyle='--')
+plt.xlabel('Days')
+plt.ylabel('Regret')
+plt.title('Regret of both learners')
+plt.show()
