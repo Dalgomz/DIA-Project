@@ -1,3 +1,4 @@
+from numpy import random
 
 customers = [45,30,20,5]
 maxCustomers = 0
@@ -12,7 +13,29 @@ basePrice1 = 30
 price2 = [20,24,28,32]
 basePrice2 = 10
 promos = [0,-3,-6,-9]
-promDist = []
+promDist = [40,30,20,10]
 
 def generateCvRate2():
-	return [[0.15,0.15,0.15,0.15],[0.34,0.34,0.34,0.34],[0.2,0.2,0.2,0.2],[0.72,0.72,0.72,0.72]]
+	# Generate random conv rate for customers near a function shape
+	array = []
+	cv2 = []
+	val = random.randint(10, 20)
+	for i in range(4):
+		array.append(val*0.01)
+	cv2.append(array)
+	array = []
+	val = random.randint(29, 39)
+	for i in range(4):
+		array.append(val*0.01)
+	cv2.append(array)
+	array = []
+	val = random.randint(15, 25)
+	for i in range(4):
+		array.append(val*0.01)
+	cv2.append(array)
+	array = []
+	val = random.randint(67, 77)
+	for i in range(4):
+		array.append(val*0.01)
+	cv2.append(array)
+	return cv2 #[[0.15,0.15,0.15,0.15],[0.34,0.34,0.34,0.34],[0.2,0.2,0.2,0.2],[0.72,0.72,0.72,0.72]]

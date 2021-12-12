@@ -122,7 +122,6 @@ plt.title('Daily Reward learnt by both learners')
 plt.show()
 
 # Regret
-
 plt.figure(0)
 plt.plot(np.cumsum(np.array(optData) - np.array(tsData)), label='Thomson Sampling', color='tab:blue')
 plt.plot(np.cumsum(np.array(optData) - np.array(ucbData)), label='UCB1', color='tab:green')

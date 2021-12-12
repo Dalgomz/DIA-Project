@@ -26,10 +26,10 @@ def hungarianAlgorithm(matrix):
         
         remZero = True
         while(remZero):
-            if zeros[0:4].count(0) >= zeros[4:8].count(0):
-                actual = zeros[0:4].index(max(zeros[0:4]))
+            if zeros[0:m.shape[0]].count(0) >= zeros[m.shape[0]:m.shape[0]*2].count(0):
+                actual = zeros[0:m.shape[0]].index(max(zeros[0:m.shape[0]]))
             else:
-                actual = zeros[4:8].index(max(zeros[4:8])) + 4
+                actual = zeros[m.shape[0]:m.shape[0]*2].index(max(zeros[m.shape[0]:m.shape[0]*2])) + m.shape[0]
 
             if actual < m.shape[0]:
                 crossX[actual] = True
@@ -41,7 +41,7 @@ def hungarianAlgorithm(matrix):
                 for j in range(m.shape[0]):
                     if not crossX[i] and not crossY[j] and m[i][j] == 0:
                         zeros[i] += 1
-                        zeros[4+j] += 1
+                        zeros[m.shape[0]+j] += 1
                  
             if max(zeros) == 0:
                 remZero = False
@@ -78,10 +78,7 @@ def hungarianAlgorithm(matrix):
     crossY = [False for x in range(m.shape[1])]  
     selections = []
 
-    print(m)
     while(crossX.count(False) + crossY.count(False) != 0):
-        print (crossX, crossY)
-        print("row",zeros[0:4],"col",zeros[4:8])
         actual = zeros.index(1)
         if actual < 4:
             for i in range(m.shape[0]):
@@ -92,10 +89,10 @@ def hungarianAlgorithm(matrix):
                     break
         else:
             for i in range(m.shape[0]):
-                if m[i,actual-4] == 0 and not crossX[i]:
+                if m[i,actual-m.shape[0]] == 0 and not crossX[i]:
                     crossX[i] = True
-                    crossY[actual-4] = True
-                    selections.append([i,actual-4])
+                    crossY[actual-m.shape[0]] = True
+                    selections.append([i,actual-m.shape[0]])
                     break
         
         zeros = [0 for x in range(m.shape[0]*2)]
@@ -103,11 +100,8 @@ def hungarianAlgorithm(matrix):
             for j in range(m.shape[0]):
                 if not crossX[i] and not crossY[j] and m[i][j] == 0:
                     zeros[i] += 1
-                    zeros[4+j] += 1
-        print (selections)
-    return m
-
-
+                    zeros[m.shape[0]+j] += 1
+    return selections
 
 def sortingByHungarian(quantityArrayX, quantityArrayY, matrix, max):
 
@@ -115,24 +109,83 @@ def sortingByHungarian(quantityArrayX, quantityArrayY, matrix, max):
         maxV = np.max(matrix)
         matrix *= -1
         matrix += maxV
-
+    
     qx = quantityArrayX
     qy = quantityArrayY
-    print(matrix)
+    distribution = []
+    filterMatrix = matrix.copy()
 
-    assignement = hungarianAlgorithm(matrix)
+    # Repeat until all discounts are applied
+    while not all([ v == 0 for v in qx ]):
+        assignement = hungarianAlgorithm(filterMatrix)
+        for val in assignement:
+            distribution.append([val[1],  val[0],  min([qx[val[1]], qy[val[0]]])])
+            qx[val[1]] -= qy[val[0]]
+            if qx[val[1]] < 0:
+                qy[val[0]] = qx[val[1]] * -1
+                qx[val[1]] = 0
+            else:
+                qy[val[0]] = 0
+
+        size = len(qx) - sum([ v == 0 for v in qx ])
+        if size == 1:
+            for x in range(len(qx)):
+                for y in range(len(qx)):
+                    if qx[x] != 0 and qy[y] != 0:
+                        distribution.append([x, y, min([qx[x], qy[y]])])
+                        qx[x] -= qy[y]
+        else:
+            filterMatrix = []
+            for i in range(size):
+                filterMatrix.append([0] * size)
+
+            i = 0
+            for x in range(len(qx)):
+                for y in range(len(qx)):
+                    if qx[x] != 0 and qy[y] != 0:
+                        filterMatrix[i//size][i%size] = matrix[x][y]
+                        i+=1
+
+            filterMatrix = np.array(filterMatrix)
+    return distribution
+
+def generateMatrix(baseprice, discount, cvr):
+    size = len(discount)
+    dataM = []
+    for i in range(size):
+        dataM.append([0] * size)
+    for i in range(len(discount)):
+        for j in range(len(cvr)):
+            dataM[i][j] = (baseprice-discount[i]) * cvr[j]
+    
+    return np.array(dataM)
+
+def productDist(a, b, baseprice, discounts, cvr):
+    for i in range(len(discounts)):
+        discounts[i] = discounts[i] * -1
+    return sortingByHungarian(a.copy(),b.copy(),generateMatrix(baseprice, discounts, cvr),True)
 
 
+"""
+# Discounts amounts
 a = np.array([40,30,20,10])
+# Customer Type amounts
 b = np.array([40,30,20,10])
+
+
+# Discounts amounts
+a = np.array([40,30,20,10])
+# Customer Type amounts
+b = np.array([40,30,20,10])
+
+# Items baseprice
 baseprice = 20
+# Discounts values
 ds = [0,3,6,9]
+# Conv. rates
 cvs = [35,25,60,90]
 
-dataM = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-for i in range(len(ds)):
-    for j in range(len(cvs)):
-        dataM[i][j] = (20-ds[i]) * cvs[j]
-
-m = np.array(dataM)
-sortingByHungarian(a,b,m,True)
+# i - Promotion id, j - Customer type id
+m = generateMatrix(baseprice, ds, cvs)
+print(sortingByHungarian(a,b,m,True))
+"""
