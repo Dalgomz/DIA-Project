@@ -33,7 +33,7 @@ maxRevenue = max(item1Prices)+max(item2Prices)-(item1Cost+item2Cost)
 # Time in days
 T = 365
 
-nExperiments = 1
+nExperiments = v.experiments
 tsRewardsPerExperiment = []
 ucbRewardsPerExperiment = []
 

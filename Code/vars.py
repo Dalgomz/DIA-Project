@@ -1,13 +1,19 @@
 from numpy import random
 
+from Environment import seasonality
+
 customers = [45,30,20,5]
 maxCustomers = 0
 for c in customers:
 	maxCustomers += c
 
+experiments = 5
 # cvRate[ccn][i] for ccv (Customer Class Number) conv rate at price[i]
 cvRate1 = [[0.15,0.11,0.09,0.06],[0.34,0.32,0.30,0.28],[0.2,0.18,0.13,0.1],[0.72,0.71,0.70,0.69]]
 cvRate2 = [[0.15,0.15,0.15,0.15],[0.34,0.34,0.34,0.34],[0.2,0.2,0.2,0.2],[0.72,0.72,0.72,0.72]]
+# Add seasons CV maker
+days = 365
+seasons = [days//4,(days//4)*2,(days//4)*3]
 price1 = [40,45,50,55]
 basePrice1 = 30
 price2 = [20,24,28,32]
