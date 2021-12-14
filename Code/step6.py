@@ -103,7 +103,6 @@ for e in range(0,nExperiments):
 			it1, it2 = env.round(i, ucbPulledArm)
 			buyers = it2
 			ucbReward += (item1Prices[ucbPulledArm] - item1Cost) * it1
-			ucbReward += (item2Prices[0] - item2Cost) * it2
 			for k in range(len(promoDistribution)):
 				# if there are available promos for this type of customer
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
