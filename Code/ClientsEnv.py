@@ -1,4 +1,4 @@
-# Environmental random variables
+# Environmental random variables for clients
 
 import math
 import pandas as pd

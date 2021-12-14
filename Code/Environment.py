@@ -19,9 +19,9 @@ class Environment():
 		self.probabilities2 = probabilities2
 
 	def round(self, ccn, pulledArm):
-		# binomial, (Cuantos, a que probabilidad)
-		# pulled arm -> indice del mejor brazo (cada brazo es de un precio)
-		# reward = How much buys
+		# binomial, (How many, probability)
+		# pulled arm -> indice del mejor brazo (Each arm is a price)
+		# reward = How many clients made a purchase
 		reward = np.random.binomial(self.customers[ccn], self.probabilities1[ccn][pulledArm])
 		if (reward > 0):
 			reward2 = np.random.binomial(reward, self.probabilities2[ccn][pulledArm])
