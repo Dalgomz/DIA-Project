@@ -1,5 +1,7 @@
+import math
 import numpy as np
 from numpy.core.numeric import cross
+from hungarian_algorithm import algorithm
 
 def hungarianAlgorithm(matrix):
     m = matrix
@@ -103,13 +105,22 @@ def hungarianAlgorithm(matrix):
                     zeros[m.shape[0]+j] += 1
     return selections
 
-def sortingByHungarian(quantityArrayX, quantityArrayY, matrix, max):
+def convertToGraph(matrix):
+    H = {}
+    for i in range(len(matrix)):
+        H['a'+str(i)] = {}
+        for j in range(len(matrix)):
+            H['a'+str(i)]['b'+str(j)] = matrix[i][j]
+    return H
 
-    if(max):
-        maxV = np.max(matrix)
-        matrix *= -1
-        matrix += maxV
-    
+def convertToResults(graph):
+    matrix = []
+    for part in graph:
+        matrix.append([int(part[0][0][1]),int(part[0][1][1])])
+    return matrix
+
+def sortingByHungarian(quantityArrayX, quantityArrayY, matrix, max):
+   
     qx = quantityArrayX
     qy = quantityArrayY
     distribution = []
@@ -117,7 +128,9 @@ def sortingByHungarian(quantityArrayX, quantityArrayY, matrix, max):
 
     # Repeat until all discounts are applied
     while not all([ v == 0 for v in qx ]):
-        assignement = hungarianAlgorithm(filterMatrix)
+        H = convertToGraph(filterMatrix)
+        graph = algorithm.find_matching(H, matching_type = 'max', return_type = 'list' ) #hungarianAlgorithm(filterMatrix)
+        assignement = convertToResults(graph)
         for val in assignement:
             distribution.append([val[1],  val[0],  min([qx[val[1]], qy[val[0]]])])
             qx[val[1]] -= qy[val[0]]
@@ -126,14 +139,19 @@ def sortingByHungarian(quantityArrayX, quantityArrayY, matrix, max):
                 qx[val[1]] = 0
             else:
                 qy[val[0]] = 0
-
-        size = len(qx) - sum([ v == 0 for v in qx ])
+        
+        size = min( len(qx) - sum([ v == 0 for v in qx ]), len(qy) - sum([ v == 0 for v in qy ]) )
         if size == 1:
             for x in range(len(qx)):
-                for y in range(len(qx)):
+                for y in range(len(qy)):
                     if qx[x] != 0 and qy[y] != 0:
                         distribution.append([x, y, min([qx[x], qy[y]])])
-                        qx[x] -= qy[y]
+                        if qx[x] > qy[y]: 
+                            qx[x] -= qy[y]
+                            qy[y] = 0
+                        else:
+                            qy[y] -= qx[x]
+                            qx[x] = 0
         else:
             filterMatrix = []
             for i in range(size):
@@ -147,6 +165,7 @@ def sortingByHungarian(quantityArrayX, quantityArrayY, matrix, max):
                         i+=1
 
             filterMatrix = np.array(filterMatrix)
+    
     return distribution
 
 def generateMatrix(baseprice, discount, cvr):
@@ -163,7 +182,30 @@ def generateMatrix(baseprice, discount, cvr):
 def productDist(a, b, baseprice, discounts, cvr):
     for i in range(len(discounts)):
         discounts[i] = discounts[i] * -1
-    return sortingByHungarian(a.copy(),b.copy(),generateMatrix(baseprice, discounts, cvr),True)
+
+    for i in range(len(cvr)):
+        cvr[i]=math.floor(cvr[i])
+
+    return sortingByHungarian(a.copy(),b.copy(),generateMatrix(baseprice, discounts, cvr),False)
+
+
+
+def productPriceDist(a, b, baseprices, discounts, cvrs):
+    for i in range(len(discounts)):
+        discounts[i] = discounts[i] * -1
+
+    max = 0
+    idx = 0
+    for i in range(len(baseprices)):    
+        if (np.max(generateMatrix(baseprices[i], discounts, cvrs[i])) > max):
+            max = np.max(generateMatrix(baseprices[i], discounts, cvrs[i]))
+            idx = i
+    
+    for i in range(len(cvrs)):
+        for j in range(len(cvrs[i])):
+            cvrs[i][j]=math.floor(cvrs[i][j])
+
+    return sortingByHungarian(a.copy(),b.copy(),generateMatrix(baseprices[0], discounts, cvrs[0]),True)
 
 
 """

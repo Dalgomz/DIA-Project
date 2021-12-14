@@ -50,7 +50,6 @@ for i in range(len(item1Prices)):
 			if promoDistribution[k][0] == j:
 				dailyOptimalRewards[i] += ((item2Prices[0]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates2[j][0])
 
-print(dailyOptimalRewards)
 optimalPrice = dailyOptimalRewards.index(max(dailyOptimalRewards))
 optimalRewards = [(dailyOptimalRewards[optimalPrice]/(maxRevenue * totalCustomers)) for x in range(T)]
 optimalPrice = dailyOptimalRewards[optimalPrice]
@@ -75,7 +74,6 @@ for e in range(0,nExperiments):
 		ucbReward = 0
 		ucbSale = 0
 
-
 		# Sale to all daily clients
 		for i in range(len(customers)):
 			it1, it2 = env.round(i, tsPulledArm)
@@ -88,7 +86,7 @@ for e in range(0,nExperiments):
 					if  buyers >= dailyAvailablePromos[k]:
 						tsReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
-						dailyAvailablePromos = 0
+						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
 						tsReward += (item2Prices[0] - item2Cost) * buyers
@@ -106,7 +104,7 @@ for e in range(0,nExperiments):
 					if  buyers >= dailyAvailablePromos[k]:
 						ucbReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
-						dailyAvailablePromos = 0
+						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
 						ucbReward += (item2Prices[0] - item2Cost) * buyers

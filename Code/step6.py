@@ -28,7 +28,11 @@ item1Cost = v.basePrice1
 item2Prices = v.price2
 item2Cost = v.basePrice2
 discounts = v.promos
-promoDistribution = hungarianAlgorithm.productDist(customers, v.promDist, item2Cost, discounts.copy(), [convRates2[0][0]*100,convRates2[1][0]*100,convRates2[2][0]*100,convRates2[3][0]*100])
+cvr2Sort = [[convRates2[0][0]*100,convRates2[1][0]*100,convRates2[2][0]*100,convRates2[3][0]*100],
+			[convRates2[0][1]*100,convRates2[1][1]*100,convRates2[2][1]*100,convRates2[3][1]*100],
+			[convRates2[0][2]*100,convRates2[1][2]*100,convRates2[2][2]*100,convRates2[3][2]*100],
+			[convRates2[0][3]*100,convRates2[1][3]*100,convRates2[2][3]*100,convRates2[3][3]*100]]
+promoDistribution = hungarianAlgorithm.productPriceDist(customers, v.promDist, v.price2, discounts.copy(), cvr2Sort)
 nArms = len(customers)
 maxRevenue = max(item1Prices)+max(item2Prices)-(item1Cost+item2Cost)
 
@@ -52,7 +56,6 @@ for i in range(len(item1Prices)):
 			if promoDistribution[k][0] == j:
 				dailyOptimalRewards[i] += ((item2Prices[0]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates2[j][0])
 
-print(dailyOptimalRewards)
 optimalPrice = dailyOptimalRewards.index(max(dailyOptimalRewards))
 optimalRewards = [(dailyOptimalRewards[optimalPrice]/(maxRevenue * totalCustomers)) for x in range(T)]
 optimalPrice = dailyOptimalRewards[optimalPrice]
@@ -90,7 +93,7 @@ for e in range(0,nExperiments):
 					if  buyers >= dailyAvailablePromos[k]:
 						tsReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
-						dailyAvailablePromos = 0
+						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
 						tsReward += (item2Prices[0] - item2Cost) * buyers
@@ -108,7 +111,7 @@ for e in range(0,nExperiments):
 					if  buyers >= dailyAvailablePromos[k]:
 						ucbReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
-						dailyAvailablePromos = 0
+						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
 						ucbReward += (item2Prices[0] - item2Cost) * buyers

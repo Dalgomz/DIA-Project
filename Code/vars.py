@@ -6,7 +6,7 @@ for c in customers:
 	maxCustomers += c
 
 # cvRate[ccn][i] for ccv (Customer Class Number) conv rate at price[i]
-cvRate1 = [[0.15,0.14,0.13,0.12],[0.34,0.33,0.32,0.31],[0.2,0.19,0.18,0.17],[0.72,0.71,0.70,0.69]]
+cvRate1 = [[0.15,0.11,0.09,0.06],[0.34,0.32,0.30,0.28],[0.2,0.18,0.13,0.1],[0.72,0.71,0.70,0.69]]
 cvRate2 = [[0.15,0.15,0.15,0.15],[0.34,0.34,0.34,0.34],[0.2,0.2,0.2,0.2],[0.72,0.72,0.72,0.72]]
 price1 = [40,45,50,55]
 basePrice1 = 30
@@ -21,21 +21,21 @@ def generateCvRate2():
 	cv2 = []
 	val = random.randint(10, 20)
 	for i in range(4):
-		array.append(val*0.01)
+		array.append((val-(i*2))*0.01)
 	cv2.append(array)
 	array = []
 	val = random.randint(29, 39)
 	for i in range(4):
-		array.append(val*0.01)
+		array.append((val-i*5)*0.01)
 	cv2.append(array)
 	array = []
 	val = random.randint(15, 25)
 	for i in range(4):
-		array.append(val*0.01)
+		array.append((val-(i*2))*0.01)
 	cv2.append(array)
 	array = []
 	val = random.randint(67, 77)
 	for i in range(4):
-		array.append(val*0.01)
+		array.append((val-(i*1))*0.01)
 	cv2.append(array)
 	return cv2 #[[0.15,0.15,0.15,0.15],[0.34,0.34,0.34,0.34],[0.2,0.2,0.2,0.2],[0.72,0.72,0.72,0.72]]
