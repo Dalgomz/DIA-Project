@@ -91,6 +91,11 @@ ucbData = np.cumsum(np.mean(ucbRewardsPerExperiment,axis=0))
 print("Best Price learnt by Thompson Sampling:",item1Prices[np.argmax([len(a) for a in tsLearner.rewardsPerArm])],"$")
 print("Best price learnt bu UCB1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
 
+print("Profit:")
+print("Thompson Sampling:",tsData[-1],"$")
+print("UCB:",ucbData[-1],"$")
+
+
 plt.figure(figsize=(14, 5))
 plt.plot(tsData, label='Thomson Sampling', color='tab:blue')
 plt.plot(ucbData, label='UCB1', color='tab:green')
@@ -123,6 +128,9 @@ plt.title('Daily Reward learnt by both learners')
 plt.savefig('img/s4-2.png')
 # plot.show()
 
+print("Regret:")
+print("Thompson Sampling:",(np.array(optData) - np.array(tsData))[-1],"$")
+print("UCB:",(np.array(optData) - np.array(ucbData))[-1],"$")
 # Regret
 plt.figure(figsize=(14, 5))
 plt.plot(np.cumsum(np.array(optData) - np.array(tsData)), label='Thomson Sampling', color='tab:blue')

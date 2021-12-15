@@ -28,3 +28,14 @@ class Environment():
 		else:
 			reward2 = 0
 		return reward, reward2
+	
+	def round2(self, ccn, pulledArm, pulledArm2):
+		# binomial, (How many, probability)
+		# pulled arm -> indice del mejor brazo (Each arm is a price)
+		# reward = How many clients made a purchase
+		reward = np.random.binomial(self.customers[ccn], self.probabilities1[ccn][pulledArm])
+		if (reward > 0):
+			reward2 = np.random.binomial(reward, self.probabilities2[ccn][pulledArm2])
+		else:
+			reward2 = 0
+		return reward, reward2

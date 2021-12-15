@@ -35,6 +35,23 @@ class NonStaticEnvironment(Environment):
 		else:
 			reward2 = 0
 		return reward, reward2
+
+	def round(self, ccn, pulledArm, pulledArm2):
+		# ccn - customer class number
+		# binomial, (How many, probability)
+		# pulled arm -> indice del mejor brazo (Each arm is a price)
+		# reward = How many clients made a purchase
+		
+		currentPhase = int(self.t / self.phaseSize)
+		if currentPhase > 3: currentPhase = 3
+		p1 = self.probabilities1[currentPhase][ccn][pulledArm]
+		reward = np.random.binomial(self.customers[ccn], p1)
+		if (reward > 0):
+			p2 = self.probabilities2[currentPhase][ccn][pulledArm2]
+			reward2 = np.random.binomial(reward, p2)
+		else:
+			reward2 = 0
+		return reward, reward2
 	
 	def nextDay(self):
 		self.t +=1

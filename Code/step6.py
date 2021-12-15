@@ -43,18 +43,18 @@ nExperiments = v.experiments
 tsRewardsPerExperiment = []
 ucbRewardsPerExperiment = []
 
-
-
 # Clarivoyant 
 dailyOptimalRewards = [0,0,0,0]
 for i in range(len(item1Prices)):
 	for j in range(len(customers)):
 		# Customer j with Price i for its conversion rate
 		dailyOptimalRewards[i] += ((item1Prices[i]-item1Cost)*customers[j]*convRates1[j][i])
+		prof2 = [item2Prices[0] *convRates1[j][i] * convRates2[j][0], item2Prices[1] *convRates1[j][i] * convRates2[j][1], item2Prices[2] *convRates1[j][i] * convRates2[j][2], item2Prices[3] *convRates1[j][i] * convRates2[j][3]]
+		bp2 = prof2.index(max(prof2))
 		for k in range(len(promoDistribution)):
 			# Discount asignation
 			if promoDistribution[k][0] == j:
-				dailyOptimalRewards[i] += ((item2Prices[0]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates1[j][i]*convRates2[j][0])
+				dailyOptimalRewards[i] += ((item2Prices[bp2]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates1[j][i]*convRates2[j][bp2])
 
 optimalPrice = dailyOptimalRewards.index(max(dailyOptimalRewards))
 optimalRewards = [(dailyOptimalRewards[optimalPrice]/(maxRevenue * totalCustomers)) for x in range(T)]
@@ -64,26 +64,32 @@ for e in range(0,nExperiments):
 	#print('\r', "Progress: {}/{} days".format(e, nExperiments), end=" ")
 	env = Environment(nArms, customers, convRates1, convRates2)
 	tsLearner = ThompsonLearner(nArms)
+	tsLearner2 = ThompsonLearner(nArms)
 	ucbLearner = UCBLearner(nArms)
+	ucbLearner2 = UCBLearner(nArms)
 	for t in range(0,T):
 		# Available promos number
 		dailyAvailablePromos = []
 		for k in range(len(promoDistribution)):
 			dailyAvailablePromos.append(promoDistribution[k][2])
+
 		# Thompson Learner
 		tsPulledArm = tsLearner.pullArm()
+		tsPulledArm2 = tsLearner2.pullArm()
 		tsReward = 0
-		tsSale = 0
+		tsReward2 = 0
+		
 		
 		# UCB1 Learner
 		ucbPulledArm = ucbLearner.pullArm()
+		ucbPulledArm2 = ucbLearner2.pullArm()
 		ucbReward = 0
-		ucbSale = 0
+		ucbReward2 = 0
 
 
 		# Sale to all daily clients
 		for i in range(len(customers)):
-			it1, it2 = env.round(i, tsPulledArm)
+			it1, it2 = env.round2(i, tsPulledArm, tsPulledArm2)
 			buyers = it2
 			tsReward += (item1Prices[tsPulledArm] - item1Cost) * it1
 			for k in range(len(promoDistribution)):
@@ -91,16 +97,16 @@ for e in range(0,nExperiments):
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
 					# If more customers than promos
 					if  buyers >= dailyAvailablePromos[k]:
-						tsReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
+						tsReward2 += (item2Prices[tsPulledArm2] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
 						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
-						tsReward += (item2Prices[0] - item2Cost) * buyers
+						tsReward2 += (item2Prices[tsPulledArm2] - item2Cost) * buyers
 						dailyAvailablePromos[k] -= buyers
 						buyers = 0
 
-			it1, it2 = env.round(i, ucbPulledArm)
+			it1, it2 = env.round2(i, ucbPulledArm, ucbPulledArm2)
 			buyers = it2
 			ucbReward += (item1Prices[ucbPulledArm] - item1Cost) * it1
 			for k in range(len(promoDistribution)):
@@ -108,28 +114,40 @@ for e in range(0,nExperiments):
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
 					# If more customers than promos
 					if  buyers >= dailyAvailablePromos[k]:
-						ucbReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
+						ucbReward2 += (item2Prices[ucbPulledArm2] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
 						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
-						ucbReward += (item2Prices[0] - item2Cost) * buyers
+						ucbReward2 += (item2Prices[ucbPulledArm2] - item2Cost) * buyers
 						dailyAvailablePromos[k] -= buyers
 						buyers = 0
 
-		rewardTS = tsReward / (maxRevenue * totalCustomers)
-		rewardUCB = ucbReward / (maxRevenue * totalCustomers)
+		rewardTS1 = (tsReward) / (maxRevenue * totalCustomers)
+		rewardUCB1 = (ucbReward) / (maxRevenue * totalCustomers)
+		rewardTS2 = (tsReward2) / (maxRevenue * totalCustomers)
+		rewardUCB2 = (ucbReward2) / (maxRevenue * totalCustomers)
 
-		tsLearner.update(tsPulledArm, rewardTS)
-		ucbLearner.update(ucbPulledArm, rewardUCB)
+		tsLearner.update(tsPulledArm, rewardTS1)
+		ucbLearner.update(ucbPulledArm, rewardUCB1)
+		tsLearner2.update(tsPulledArm2, rewardTS2)
+		ucbLearner2.update(ucbPulledArm2, rewardUCB2)
 
-	tsRewardsPerExperiment.append(tsLearner.collectedRewards)
-	ucbRewardsPerExperiment.append(ucbLearner.collectedRewards)
+	tsCollectedRewards = tsLearner.collectedRewards + tsLearner2.collectedRewards
+	ucbCollectedRewards = ucbLearner.collectedRewards + ucbLearner2.collectedRewards
+	tsRewardsPerExperiment.append(tsCollectedRewards)
+	ucbRewardsPerExperiment.append(ucbCollectedRewards)
 
 tsData = np.cumsum(np.mean(tsRewardsPerExperiment,axis=0))
 ucbData = np.cumsum(np.mean(ucbRewardsPerExperiment,axis=0))
-print("Best Price learnt by Thompson Sampling:",item1Prices[np.argmax([len(a) for a in tsLearner.rewardsPerArm])],"$")
-print("Best price learnt by UCB1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
+print("Best prices learnt by Thompson Sampling:\nItem 1: ",item1Prices[np.argmax([len(a) for a in tsLearner.rewardsPerArm])],"$")
+print("Item 2: ",item2Prices[np.argmax([len(a) for a in tsLearner2.rewardsPerArm])],"$")
+print("Best prices learnt by UCB1: \nItem 1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
+print("Item 2:",item2Prices[np.argmax([len(a) for a in ucbLearner2.rewardsPerArm])],"$")
+
+print("Profit:")
+print("Thompson Sampling:",tsData[-1],"$")
+print("UCB:",ucbData[-1],"$")
 
 plt.figure(figsize=(14, 5))
 plt.plot(tsData, label='Thomson Sampling', color='tab:blue')
@@ -163,6 +181,9 @@ plt.title('Daily Reward learnt by both learners')
 plt.savefig('img/s6-2.png')
 # plot.show()
 
+print("Regret:")
+print("Thompson Sampling:",(np.array(optData) - np.array(tsData))[-1],"$")
+print("UCB:",(np.array(optData) - np.array(ucbData))[-1],"$")
 # Regret
 plt.figure(figsize=(14, 5))
 plt.plot(np.cumsum(np.array(optData) - np.array(tsData)), label='Thomson Sampling', color='tab:blue')

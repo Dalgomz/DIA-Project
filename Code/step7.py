@@ -85,8 +85,11 @@ for e in range(0,nExperiments):
 	#print('\r', "Progress: {}/{} days".format(e, nExperiments), end=" ")
 	env = NonStaticEnvironment(nArms, customers, seasonRates1, seasonRates2, T)
 	tsLearner = ThompsonLearner(nArms)
+	tsLearner2 = ThompsonLearner(nArms)
 	swLearner = TSlidingWindow(nArms, seasonDuration)
+	swLearner2 = TSlidingWindow(nArms, seasonDuration)
 	ucbLearner = UCBLearner(nArms)
+	ucbLearner2 = UCBLearner(nArms)
 	for t in range(0,T):
 		if t in seasonsBreak:
 			# Reset learners
@@ -98,24 +101,28 @@ for e in range(0,nExperiments):
 		dailyAvailablePromos = []
 		for k in range(len(promoDistribution)):
 			dailyAvailablePromos.append(promoDistribution[k][2])
+		
 		# Thompson Learner
 		tsPulledArm = tsLearner.pullArm()
+		tsPulledArm2 = tsLearner2.pullArm()
 		tsReward = 0
-		tsSale = 0
+		tsReward2 = 0
 		
 		# UCB1 Learner
 		ucbPulledArm = ucbLearner.pullArm()
+		ucbPulledArm2 = ucbLearner2.pullArm()
 		ucbReward = 0
-		ucbSale = 0
+		ucbReward2 = 0
 
 		# Sliding Window
 		swPulledArm = swLearner.pullArm()
+		swPulledArm2 = swLearner2.pullArm()
 		swReward = 0
-		swSale = 0
+		swReward2 = 0
 
 		# Sale to all daily clients classes
 		for i in range(len(customers)):
-			it1, it2 = env.round(i, tsPulledArm)
+			it1, it2 = env.round(i, tsPulledArm, tsPulledArm2)
 			buyers = it2
 			tsReward += (item1Prices[tsPulledArm] - item1Cost) * it1
 			# Applying promos 
@@ -124,16 +131,16 @@ for e in range(0,nExperiments):
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
 					# If more customers than promos
 					if  buyers >= dailyAvailablePromos[k]:
-						tsReward += (item2Prices[bp2[season]] - item2Cost) * dailyAvailablePromos[k]
+						tsReward2 += (item2Prices[tsPulledArm2] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
 						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
-						tsReward += (item2Prices[bp2[season]] - item2Cost) * buyers
+						tsReward2 += (item2Prices[tsPulledArm2] - item2Cost) * buyers
 						dailyAvailablePromos[k] -= buyers
 						buyers = 0
 
-			it1, it2 = env.round(i, ucbPulledArm)
+			it1, it2 = env.round(i, ucbPulledArm, ucbPulledArm2)
 			buyers = it2
 			ucbReward += (item1Prices[ucbPulledArm] - item1Cost) * it1
 			for k in range(len(promoDistribution)):
@@ -141,16 +148,16 @@ for e in range(0,nExperiments):
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
 					# If more customers than promos
 					if  buyers >= dailyAvailablePromos[k]:
-						ucbReward += (item2Prices[bp2[season]] - item2Cost) * dailyAvailablePromos[k]
+						ucbReward2 += (item2Prices[ucbPulledArm2] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
 						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
-						ucbReward += (item2Prices[bp2[season]] - item2Cost) * buyers
+						ucbReward2 += (item2Prices[ucbPulledArm2] - item2Cost) * buyers
 						dailyAvailablePromos[k] -= buyers
 						buyers = 0
 						
-			it1, it2 = env.round(i, swPulledArm)
+			it1, it2 = env.round(i, swPulledArm, swPulledArm2)
 			buyers = it2
 			swReward += (item1Prices[swPulledArm] - item1Cost) * it1
 			# Applying promos 
@@ -159,43 +166,58 @@ for e in range(0,nExperiments):
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
 					# If more customers than promos
 					if  buyers >= dailyAvailablePromos[k]:
-						swReward += (item2Prices[bp2[season]] - item2Cost) * dailyAvailablePromos[k]
+						swReward2 += (item2Prices[swPulledArm2] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
 						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
-						swReward += (item2Prices[bp2[season]] - item2Cost) * buyers
+						swReward2 += (item2Prices[swPulledArm2] - item2Cost) * buyers
 						dailyAvailablePromos[k] -= buyers
 						buyers = 0
 		env.nextDay()
 
 		rewardTS = tsReward / (maxRevenue * totalCustomers)
+		rewardTS2 = tsReward2 / (maxRevenue * totalCustomers)
 		rewardUCB = ucbReward / (maxRevenue * totalCustomers)
+		rewardUCB2 = ucbReward2 / (maxRevenue * totalCustomers)
 		rewardSW = swReward / (maxRevenue * totalCustomers)
+		rewardSW2 = swReward2 / (maxRevenue * totalCustomers)
 
 		tsLearner.update(tsPulledArm, rewardTS)
+		tsLearner2.update(tsPulledArm2, rewardTS2)
 		ucbLearner.update(ucbPulledArm, rewardUCB)
+		ucbLearner2.update(ucbPulledArm2, rewardUCB2)
 		swLearner.update(swPulledArm, rewardSW)
+		swLearner2.update(swPulledArm2, rewardSW2)
 
-	tsRewardsPerExperiment.append(tsLearner.collectedRewards)
-	ucbRewardsPerExperiment.append(ucbLearner.collectedRewards)
-	swRewardsPerExperiment.append(swLearner.collectedRewards)
+	tsCollectedRewards = tsLearner.collectedRewards + tsLearner2.collectedRewards
+	ucbCollectedRewards = ucbLearner.collectedRewards + ucbLearner2.collectedRewards
+	swCollectedRewards = swLearner.collectedRewards + swLearner2.collectedRewards
+
+	tsRewardsPerExperiment.append(tsCollectedRewards)
+	ucbRewardsPerExperiment.append(ucbCollectedRewards)
+	swRewardsPerExperiment.append(swCollectedRewards)
 
 tsData = np.cumsum(np.mean(tsRewardsPerExperiment,axis=0))
 ucbData = np.cumsum(np.mean(ucbRewardsPerExperiment,axis=0))
 swData = np.cumsum(np.mean(swRewardsPerExperiment,axis=0))
 
 print("Best Price learnt by Thompson Sampling: \nItem 1:",item1Prices[np.argmax([len(a) for a in tsLearner.rewardsPerArm])],"$")
-print("Item 2:",item2Prices[max(bp2, key = bp2.count)],"$")
+print("Item 2:",item2Prices[np.argmax([len(a) for a in tsLearner2.rewardsPerArm])],"$")
 print("Best price learnt by UCB1: \nItem 1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
-print("Item 2:",item2Prices[max(bp2, key = bp2.count)],"$")
+print("Item 2:",item2Prices[np.argmax([len(a) for a in ucbLearner2.rewardsPerArm])],"$")
 print("Best price learnt by Sliding Window: \nItem 1:",item1Prices[np.argmax([len(a) for a in swLearner.rewardsPerArm])],"$")
-print("Item 2:",item2Prices[max(bp2, key = bp2.count)],"$")
+print("Item 2:",item2Prices[np.argmax([len(a) for a in swLearner2.rewardsPerArm])],"$")
+
+print("Profit:")
+print("Thompson Sampling:",swData[-1],"$")
+print("UCB:",ucbData[-1],"$")
+print("Sliding Window:",tsData[-1],"$")
 
 plt.figure(figsize=(14, 5))
-plt.plot(tsData, label='Thomson Sampling', color='tab:blue')
+plt.plot(swData, label='Thomson Sampling', color='tab:blue')
 plt.plot(ucbData, label='UCB1', color='tab:green')
-plt.plot(swData, label='Sliding Window', color='tab:orange')
+plt.plot(tsData, label='Sliding Window', color='tab:orange')
 plt.plot(np.cumsum(optimalRewards), label='Carivoyant', color='tab:red')
 plt.legend(loc='lower right')
 plt.grid(linestyle='--')
@@ -215,9 +237,9 @@ def moving_average(x, w):
 	return np.convolve(x, np.ones(w), 'valid') / w
 
 plt.figure(figsize=(14, 5))
-plt.plot(moving_average(tsData, 10), label='Sliding Window', color='tab:blue')
+plt.plot(moving_average(swData, 10), label='Thompson Sampling', color='tab:blue')
 plt.plot(moving_average(ucbData, 10), label='UCB1', color='tab:green')
-plt.plot(moving_average(swData, 10), label='Thompson Sampling', color='tab:orange')
+plt.plot(moving_average(tsData, 10), label='Sliding Window', color='tab:orange')
 plt.plot(optData, label='Carivoyant', color='tab:red')
 plt.legend(loc='lower right')
 plt.grid(linestyle='--')
@@ -227,11 +249,16 @@ plt.title('Daily Reward learnt by both learners')
 plt.savefig('img/s7-2.png')
 # plot.show()
 
+
+print("Regret:")
+print("Thompson Sampling:",(np.array(optData) - np.array(swData))[-1],"$")
+print("UCB:",(np.array(optData) - np.array(ucbData))[-1],"$")
+print("Sliding Window:",(np.array(optData) - np.array(tsData))[-1],"$")
 # Regret
 plt.figure(figsize=(14, 5))
-plt.plot(np.cumsum(np.array(optData) - np.array(tsData)), label='Thomson Sampling', color='tab:blue')
+plt.plot(np.cumsum(np.array(optData) - np.array(swData)), label='Thomson Sampling', color='tab:blue')
 plt.plot(np.cumsum(np.array(optData) - np.array(ucbData)), label='UCB1', color='tab:green')
-plt.plot(np.cumsum(np.array(optData) - np.array(swData)), label='Sliding Window', color='tab:orange')
+plt.plot(np.cumsum(np.array(optData) - np.array(tsData)), label='Sliding Window', color='tab:orange')
 plt.legend(loc='lower right')
 plt.grid(linestyle='--')
 plt.xlabel('Days')
