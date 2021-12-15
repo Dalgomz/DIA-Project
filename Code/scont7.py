@@ -193,7 +193,7 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Rewards')
 plt.title('Cumulative Reward collected by both learners')
-plt.show()
+# plot.show()
 
 # Daily reward
 
@@ -214,7 +214,7 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Revenue')
 plt.title('Daily Reward learnt by both learners')
-plt.show()
+# plot.show()
 
 # Regret
 plt.figure(0)
@@ -226,4 +226,4 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Regret')
 plt.title('Regret of both learners')
-plt.show()
+# plot.show()

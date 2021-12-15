@@ -129,9 +129,9 @@ for e in range(0,nExperiments):
 tsData = np.cumsum(np.mean(tsRewardsPerExperiment,axis=0))
 ucbData = np.cumsum(np.mean(ucbRewardsPerExperiment,axis=0))
 print("Best Price learnt by Thompson Sampling:",item1Prices[np.argmax([len(a) for a in tsLearner.rewardsPerArm])],"$")
-print("Best price learnt bu UCB1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
+print("Best price learnt by UCB1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
 
-plt.figure(0)
+plt.figure(figsize=(14, 5))
 plt.plot(tsData, label='Thomson Sampling', color='tab:blue')
 plt.plot(ucbData, label='UCB1', color='tab:green')
 plt.plot(np.cumsum(optimalRewards), label='Carivoyant', color='tab:red')
@@ -140,7 +140,8 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Rewards')
 plt.title('Cumulative Reward collected by both learners')
-plt.show()
+plt.savefig('img/s6-1.png')
+# plot.show()
 
 # Daily reward
 
@@ -150,7 +151,7 @@ optData = np.multiply(optimalRewards,(maxRevenue * totalCustomers))
 def moving_average(x, w):
 	return np.convolve(x, np.ones(w), 'valid') / w
 
-plt.figure(0)
+plt.figure(figsize=(14, 5))
 plt.plot(moving_average(tsData, 5), label='Thomson Sampling', color='tab:blue')
 plt.plot(moving_average(ucbData, 5), label='UCB1', color='tab:green')
 plt.plot(optData, label='Carivoyant', color='tab:red')
@@ -159,10 +160,11 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Revenue')
 plt.title('Daily Reward learnt by both learners')
-plt.show()
+plt.savefig('img/s6-2.png')
+# plot.show()
 
 # Regret
-plt.figure(0)
+plt.figure(figsize=(14, 5))
 plt.plot(np.cumsum(np.array(optData) - np.array(tsData)), label='Thomson Sampling', color='tab:blue')
 plt.plot(np.cumsum(np.array(optData) - np.array(ucbData)), label='UCB1', color='tab:green')
 plt.legend(loc='lower right')
@@ -170,4 +172,5 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Regret')
 plt.title('Regret of both learners')
-plt.show()
+plt.savefig('img/s6-3.png')
+# plot.show()

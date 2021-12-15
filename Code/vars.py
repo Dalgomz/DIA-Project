@@ -19,6 +19,13 @@ basePrice2 = 10
 promos = [0,-3,-6,-9]
 promDist = [40,30,20,10]
 
+def sortingCv(convRateSeason, i):
+	convRate = convRateSeason[i]
+	return ([[convRate[0][0]*100,convRate[1][0]*100,convRate[2][0]*100,convRate[3][0]*100],
+	[convRate[0][1]*100,convRate[1][1]*100,convRate[2][1]*100,convRate[3][1]*100],
+	[convRate[0][2]*100,convRate[1][2]*100,convRate[2][2]*100,convRate[3][2]*100],
+	[convRate[0][3]*100,convRate[1][3]*100,convRate[2][3]*100,convRate[3][3]*100]])
+
 def generateCvRate2():
 	# Generate random conv rate for customers near a function shape
 	array = []

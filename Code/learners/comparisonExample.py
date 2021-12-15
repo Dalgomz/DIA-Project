@@ -27,4 +27,4 @@ for e in range(0,nExperiments):
 
 plt.figure(0)
 plt.plot(np.cumsum(np.mean(opt-tsRewardsPerExperiment,axis=0)),'x')
-plt.show()
+# plot.show()

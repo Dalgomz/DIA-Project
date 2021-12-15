@@ -31,14 +31,18 @@ cvr2Sort = [[convRates2[0][0]*100,convRates2[1][0]*100,convRates2[2][0]*100,conv
 			[convRates2[0][1]*100,convRates2[1][1]*100,convRates2[2][1]*100,convRates2[3][1]*100],
 			[convRates2[0][2]*100,convRates2[1][2]*100,convRates2[2][2]*100,convRates2[3][2]*100],
 			[convRates2[0][3]*100,convRates2[1][3]*100,convRates2[2][3]*100,convRates2[3][3]*100]]
-promoDistribution = hungarianAlgorithm.productPriceDist(customers, v.promDist, v.price2, discounts.copy(), cvr2Sort) # One per season
 nArms = len(customers)
 maxRevenue = max(item1Prices)+max(item2Prices)-(item1Cost+item2Cost)
 seasonsBreak = v.seasons
 seasonDuration = v.seasons[0]
 seasonRates1 = v.cvRate1Seasons()
 seasonRates2 = v.cvRate2Seasons()
-
+promoDistributionSeason = [
+	hungarianAlgorithm.productPriceDist(customers, v.promDist, v.price2, discounts.copy(), v.sortingCv(seasonRates1, 0)),
+	hungarianAlgorithm.productPriceDist(customers, v.promDist, v.price2, discounts.copy(), v.sortingCv(seasonRates1, 1)),
+	hungarianAlgorithm.productPriceDist(customers, v.promDist, v.price2, discounts.copy(), v.sortingCv(seasonRates1, 2)),
+	hungarianAlgorithm.productPriceDist(customers, v.promDist, v.price2, discounts.copy(), v.sortingCv(seasonRates1, 3))] # One per season
+promoDistribution = promoDistributionSeason[0]
 # Time in days
 T = 365
 
@@ -46,8 +50,7 @@ nExperiments = v.experiments
 tsRewardsPerExperiment = []
 ucbRewardsPerExperiment = []
 swRewardsPerExperiment = []
-
-
+bp2 = [0,0,0,0]
 
 # Clarivoyant 
 # Do one predict per season
@@ -59,10 +62,12 @@ for season in range(len(seasonsBreak)):
 		for j in range(len(customers)):
 			# Customer j with Price i for its conversion rate
 			dailyOptimalRewards[season][i] += ((item1Prices[i]-item1Cost)*customers[j]*convRates1[j][i])
+			prof2 = [item2Prices[0] * convRates2[j][0], item2Prices[1] * convRates2[j][1], item2Prices[2] * convRates2[j][2], item2Prices[3] * convRates2[j][3]]
+			bp2[season] = prof2.index(max(prof2))
 			for k in range(len(promoDistribution)):
 				# Discount asignation
 				if promoDistribution[k][0] == j:
-					dailyOptimalRewards[season][i] += ((item2Prices[0]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates2[j][0])
+					dailyOptimalRewards[season][i] += ((item2Prices[bp2[season]]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates2[j][bp2[season]])
 
 optimalRewards = []
 lastSeason = 0
@@ -73,20 +78,20 @@ for season in range(len(seasonsBreak)):
 	optimalPrice = dailyOptimalRewards[season][optimalPrice]
 	lastSeason = seasonsBreak[season]
 
-print(seasonsBreak)
 convRates1 = seasonRates1[0]
 convRates2 = seasonRates2[0]
+season = 0
 for e in range(0,nExperiments):
 	#print('\r', "Progress: {}/{} days".format(e, nExperiments), end=" ")
-	env = Environment(nArms, customers, convRates1, convRates2)
 	env = NonStaticEnvironment(nArms, customers, seasonRates1, seasonRates2, T)
 	tsLearner = ThompsonLearner(nArms)
 	swLearner = TSlidingWindow(nArms, seasonDuration)
 	ucbLearner = UCBLearner(nArms)
 	for t in range(0,T):
-		if seasonsBreak == t:
+		if t in seasonsBreak:
 			# Reset learners
-			print(tsLearner)
+			season += 1
+			promoDistribution = promoDistributionSeason[season]
 			# Change conversion rates
 
 		# Available promos number
@@ -119,12 +124,12 @@ for e in range(0,nExperiments):
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
 					# If more customers than promos
 					if  buyers >= dailyAvailablePromos[k]:
-						tsReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
+						tsReward += (item2Prices[bp2[season]] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
 						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
-						tsReward += (item2Prices[0] - item2Cost) * buyers
+						tsReward += (item2Prices[bp2[season]] - item2Cost) * buyers
 						dailyAvailablePromos[k] -= buyers
 						buyers = 0
 
@@ -136,12 +141,12 @@ for e in range(0,nExperiments):
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
 					# If more customers than promos
 					if  buyers >= dailyAvailablePromos[k]:
-						ucbReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
+						ucbReward += (item2Prices[bp2[season]] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
 						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
-						ucbReward += (item2Prices[0] - item2Cost) * buyers
+						ucbReward += (item2Prices[bp2[season]] - item2Cost) * buyers
 						dailyAvailablePromos[k] -= buyers
 						buyers = 0
 						
@@ -154,12 +159,12 @@ for e in range(0,nExperiments):
 				if i == promoDistribution[k][0] and dailyAvailablePromos[k] > 0:
 					# If more customers than promos
 					if  buyers >= dailyAvailablePromos[k]:
-						swReward += (item2Prices[0] - item2Cost) * dailyAvailablePromos[k]
+						swReward += (item2Prices[bp2[season]] - item2Cost) * dailyAvailablePromos[k]
 						buyers -= dailyAvailablePromos[k]
 						dailyAvailablePromos[k] = 0
 					# If less customers than promos, but remaining
 					elif buyers > 0:
-						swReward += (item2Prices[0] - item2Cost) * buyers
+						swReward += (item2Prices[bp2[season]] - item2Cost) * buyers
 						dailyAvailablePromos[k] -= buyers
 						buyers = 0
 		env.nextDay()
@@ -180,10 +185,14 @@ tsData = np.cumsum(np.mean(tsRewardsPerExperiment,axis=0))
 ucbData = np.cumsum(np.mean(ucbRewardsPerExperiment,axis=0))
 swData = np.cumsum(np.mean(swRewardsPerExperiment,axis=0))
 
-print("Best Price learnt by Thompson Sampling:",item1Prices[np.argmax([len(a) for a in tsLearner.rewardsPerArm])],"$")
-print("Best price learnt bu UCB1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
+print("Best Price learnt by Thompson Sampling: \nItem 1:",item1Prices[np.argmax([len(a) for a in tsLearner.rewardsPerArm])],"$")
+print("Item 2:",item2Prices[max(bp2, key = bp2.count)],"$")
+print("Best price learnt by UCB1: \nItem 1:",item1Prices[np.argmax([len(a) for a in ucbLearner.rewardsPerArm])],"$")
+print("Item 2:",item2Prices[max(bp2, key = bp2.count)],"$")
+print("Best price learnt by Sliding Window: \nItem 1:",item1Prices[np.argmax([len(a) for a in swLearner.rewardsPerArm])],"$")
+print("Item 2:",item2Prices[max(bp2, key = bp2.count)],"$")
 
-plt.figure(0)
+plt.figure(figsize=(14, 5))
 plt.plot(tsData, label='Thomson Sampling', color='tab:blue')
 plt.plot(ucbData, label='UCB1', color='tab:green')
 plt.plot(swData, label='Sliding Window', color='tab:orange')
@@ -193,7 +202,8 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Rewards')
 plt.title('Cumulative Reward collected by both learners')
-plt.show()
+plt.savefig('img/s7-1.png')
+# plot.show()
 
 # Daily reward
 
@@ -204,7 +214,7 @@ optData = np.multiply(optimalRewards,(maxRevenue * totalCustomers))
 def moving_average(x, w):
 	return np.convolve(x, np.ones(w), 'valid') / w
 
-plt.figure(0)
+plt.figure(figsize=(14, 5))
 plt.plot(moving_average(tsData, 10), label='Sliding Window', color='tab:blue')
 plt.plot(moving_average(ucbData, 10), label='UCB1', color='tab:green')
 plt.plot(moving_average(swData, 10), label='Thompson Sampling', color='tab:orange')
@@ -214,10 +224,11 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Revenue')
 plt.title('Daily Reward learnt by both learners')
-plt.show()
+plt.savefig('img/s7-2.png')
+# plot.show()
 
 # Regret
-plt.figure(0)
+plt.figure(figsize=(14, 5))
 plt.plot(np.cumsum(np.array(optData) - np.array(tsData)), label='Thomson Sampling', color='tab:blue')
 plt.plot(np.cumsum(np.array(optData) - np.array(ucbData)), label='UCB1', color='tab:green')
 plt.plot(np.cumsum(np.array(optData) - np.array(swData)), label='Sliding Window', color='tab:orange')
@@ -226,4 +237,5 @@ plt.grid(linestyle='--')
 plt.xlabel('Days')
 plt.ylabel('Regret')
 plt.title('Regret of both learners')
-plt.show()
+plt.savefig('img/s7-3.png')
+# plot.show()
