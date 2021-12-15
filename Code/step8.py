@@ -62,12 +62,12 @@ for season in range(len(seasonsBreak)):
 		for j in range(len(customers)):
 			# Customer j with Price i for its conversion rate
 			dailyOptimalRewards[season][i] += ((item1Prices[i]-item1Cost)*customers[j]*convRates1[j][i])
-			prof2 = [item2Prices[0] * convRates2[j][0], item2Prices[1] * convRates2[j][1], item2Prices[2] * convRates2[j][2], item2Prices[3] * convRates2[j][3]]
+			prof2 = [item2Prices[0]*convRates1[j][i] * convRates2[j][0], item2Prices[1]*convRates1[j][i] * convRates2[j][1], item2Prices[2]*convRates1[j][i] * convRates2[j][2], item2Prices[3]*convRates1[j][i] * convRates2[j][3]]
 			bp2[season] = prof2.index(max(prof2))
 			for k in range(len(promoDistribution)):
 				# Discount asignation
 				if promoDistribution[k][0] == j:
-					dailyOptimalRewards[season][i] += ((item2Prices[bp2[season]]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates2[j][bp2[season]])
+					dailyOptimalRewards[season][i] += ((item2Prices[bp2[season]]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates1[j][i]*convRates2[j][bp2[season]])
 
 optimalRewards = []
 lastSeason = 0

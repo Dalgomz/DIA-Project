@@ -44,7 +44,7 @@ dailyOptimalRewards = [0,0,0,0]
 for i in range(len(item1Prices)):
 	for j in range(len(customers)):
 		# Customer j with Price i for its conversion rate
-		dailyOptimalRewards[i] += ((item1Prices[i]-item1Cost)*customers[j]*convRates1[j][i] + (item2Prices[0]-item2Cost)*customers[j]*convRates2[j][0])
+		dailyOptimalRewards[i] += ((item1Prices[i]-item1Cost)*customers[j]*convRates1[j][i] + (item2Prices[0]-item2Cost)*customers[j]*convRates1[j][i]*convRates2[j][0])
 
 optimalPrice = dailyOptimalRewards.index(max(dailyOptimalRewards))
 optimalRewards = [(dailyOptimalRewards[optimalPrice]/(maxRevenue * totalCustomers)) for x in range(365)]

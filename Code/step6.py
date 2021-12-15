@@ -54,7 +54,7 @@ for i in range(len(item1Prices)):
 		for k in range(len(promoDistribution)):
 			# Discount asignation
 			if promoDistribution[k][0] == j:
-				dailyOptimalRewards[i] += ((item2Prices[0]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates2[j][0])
+				dailyOptimalRewards[i] += ((item2Prices[0]-item2Cost-discounts[ promoDistribution[k][1] ])*promoDistribution[k][2]*convRates1[j][i]*convRates2[j][0])
 
 optimalPrice = dailyOptimalRewards.index(max(dailyOptimalRewards))
 optimalRewards = [(dailyOptimalRewards[optimalPrice]/(maxRevenue * totalCustomers)) for x in range(T)]
